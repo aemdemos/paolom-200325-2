@@ -1,55 +1,52 @@
 export default function parse(element, {document}) {
-  // Helper function to create cells array
-  const createCarouselCells = (element, document) => {
-    const rows = [];
+  const slides = Array.from(element.querySelectorAll('awt-carousel-item'));
+  const cells = [];
 
-    // Header Row
-    const headerCell = document.createElement('strong');
-    headerCell.textContent = 'Carousel';
-    const headerRow = [headerCell];
-    rows.push(headerRow);
+  // Add header row for the block type
+  const headerCell = document.createElement('strong');
+  headerCell.textContent = 'Carousel';
+  cells.push([headerCell]);
 
-    // Process each carousel item
-    const items = element.querySelectorAll('awt-carousel-item');
-    items.forEach((item) => {
-      const imageSrc = element.querySelector('img[slot="background"]')?.src;
-      const image = document.createElement('img');
-      image.src = imageSrc;
+  slides.forEach((slide) => {
+    // Extract image
+    const backgroundImage = element.querySelector('img[slot="background"]');
+    let img = null;
+    if (backgroundImage) {
+      img = document.createElement('img');
+      img.src = backgroundImage.src;
+    }
 
-      const content = document.createElement('div');
-      
-      // Title
+    // Extract content
+    const content = document.createElement('div');
+
+    const titleText = slide.getAttribute('carouseltitle');
+    if (titleText) {
       const title = document.createElement('h2');
-      title.textContent = item.getAttribute('carouseltitle');
+      title.textContent = titleText;
       content.appendChild(title);
+    }
 
-      // Text
-      const textHtml = item.getAttribute('text');
-      const textContainer = document.createElement('div');
-      textContainer.innerHTML = textHtml;
-      content.appendChild(textContainer);
+    const descriptionText = slide.getAttribute('text');
+    if (descriptionText) {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = descriptionText;
+      const paragraphs = tempDiv.querySelectorAll('p');
+      paragraphs.forEach((p) => {
+        content.appendChild(p);
+      });
+    }
 
-      // CTA Button
-      const ctaButton = item.querySelector('awt-btn');
-      if (ctaButton) {
-        const link = document.createElement('a');
-        link.href = ctaButton.getAttribute('href');
-        link.textContent = ctaButton.textContent.trim();
-        content.appendChild(link);
-      }
+    const ctaButton = slide.querySelector('div[slot="cta_buttons"] awt-btn');
+    if (ctaButton) {
+      const link = document.createElement('a');
+      link.href = ctaButton.getAttribute('href');
+      link.textContent = ctaButton.textContent.trim();
+      content.appendChild(link);
+    }
 
-      rows.push([image, content]);
-    });
+    cells.push([img || '', content]);
+  });
 
-    return rows;
-  };
-
-  // Create cells array
-  const cells = createCarouselCells(element, document);
-
-  // Create the table block
-  const block = WebImporter.DOMUtils.createTable(cells, document);
-
-  // Replace the original element with the block table
-  element.replaceWith(block);
+  const blockTable = WebImporter.DOMUtils.createTable(cells, document);
+  element.replaceWith(blockTable);
 }

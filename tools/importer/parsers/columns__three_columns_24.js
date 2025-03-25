@@ -1,43 +1,44 @@
 export default function parse(element, {document}) {
-    // Helper function to create the table
-    function createContentCell(card) {
-        const title = card.querySelector('h4')?.textContent || '';
-        const description = card.querySelector('[slot="cardDescription"]')?.innerHTML || '';
-        const image = card.querySelector('img');
-        const imageElement = document.createElement('img');
-        if (image) {
-            imageElement.src = image.src;
-            imageElement.alt = image.alt || '';
-        }
+  // Extract all awt-category-card elements
+  const cards = Array.from(element.querySelectorAll('awt-category-card'));
 
-        const titleElement = document.createElement('h4');
-        titleElement.textContent = title;
+  // Validate that cards exist
+  if (cards.length === 0) return;
 
-        const descriptionElement = document.createElement('p');
-        descriptionElement.innerHTML = description;
+  // Header row
+  const headerCell = document.createElement('strong');
+  headerCell.textContent = 'Columns';
+  const headerRow = [headerCell];
+  const cells = [headerRow];
 
-        return [imageElement, titleElement, descriptionElement];
+  // Extract content dynamically from each card
+  cards.forEach((card) => {
+    const image = document.createElement('img');
+    const imgElement = card.querySelector('img');
+    if (imgElement) {
+      image.src = imgElement.src;
+      image.alt = imgElement.alt;
     }
 
-    // Extract cards from the container
-    const cards = element.querySelectorAll('awt-category-card');
+    const title = document.createElement('h4');
+    const titleElement = card.querySelector('h4');
+    if (titleElement) {
+      title.textContent = titleElement.textContent;
+    }
 
-    // Prepare header row
-    const headerCell = document.createElement('strong');
-    headerCell.textContent = 'Columns';
-    const headerRow = [headerCell];
+    const description = document.createElement('p');
+    const descriptionElement = card.querySelector('p');
+    if (descriptionElement) {
+      description.innerHTML = descriptionElement.innerHTML;
+    }
 
-    // Prepare content row
-    const contentRow = Array.from(cards).map(card => createContentCell(card));
+    // Place each card's content in a separate row
+    cells.push([image, title, description]);
+  });
 
-    // Create table
-    const cells = [
-        headerRow,
-        contentRow
-    ];
+  // Create table using helper method
+  const table = WebImporter.DOMUtils.createTable(cells, document);
 
-    const blockTable = WebImporter.DOMUtils.createTable(cells, document);
-
-    // Replace the original element with the generated table
-    element.replaceWith(blockTable);
+  // Replace original element with new table
+  element.replaceWith(table);
 }

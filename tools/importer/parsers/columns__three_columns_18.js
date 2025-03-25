@@ -1,42 +1,57 @@
 export default function parse(element, {document}) {
-    const cards = element.querySelectorAll('awt-category-card');
+  // Helper to safely extract text content
+  const getTextContent = (el) => el ? el.textContent?.trim() || '' : '';
 
-    const headerRow = [document.createElement('strong')];
-    headerRow[0].textContent = 'Columns';
+  const createCard = (card) => {
+    const titleElement = card.querySelector('.awt-category-card__title');
+    const title = getTextContent(titleElement);
 
-    const rows = Array.from(cards).map((card) => {
-        const image = document.createElement('img');
-        const imgElement = card.querySelector('img');
-        if (imgElement) {
-            image.src = imgElement.src;
-            image.alt = imgElement.alt || '';
-        }
+    const descriptionElement = card.querySelector('p[slot="cardDescription"]');
+    const description = descriptionElement ? descriptionElement.innerHTML.trim() : '';
 
-        const title = document.createElement('h4');
-        const titleElement = card.querySelector('.awt-category-card__title span');
-        if (titleElement) {
-            title.textContent = titleElement.textContent;
-        }
+    const imageElement = card.querySelector('img');
+    const image = imageElement ? (() => {
+      const img = document.createElement('img');
+      img.src = imageElement.src;
+      img.alt = imageElement.alt || '';
+      return img;
+    })() : '';
 
-        const description = document.createElement('p');
-        const descriptionElement = card.querySelector('p');
-        if (descriptionElement) {
-            description.innerHTML = descriptionElement.innerHTML;
-        }
+    const linkElement = card.querySelector('awt-btn');
+    const link = linkElement ? (() => {
+      const a = document.createElement('a');
+      a.href = linkElement.getAttribute('href');
+      a.textContent = getTextContent(linkElement);
+      return a;
+    })() : '';
 
-        const link = document.createElement('a');
-        const btnElement = card.querySelector('awt-btn');
-        if (btnElement) {
-            link.href = btnElement.getAttribute('href') || '#';
-            link.textContent = 'Read more';
-        }
+    return [image, (() => {
+      const h2 = document.createElement('h2');
+      h2.textContent = title;
+      return h2;
+    })(), description, link];
+  };
 
-        return [image, title, description, link];
-    });
+  // Parse all cards
+  const cards = Array.from(element.querySelectorAll('awt-category-card'));
+  const cardCells = cards.map(createCard);
 
-    const cells = [headerRow, ...rows];
+  // Add block type as header row
+  const headerRow = [(() => {
+    const strong = document.createElement('strong');
+    strong.textContent = 'Columns';
+    return strong;
+  })()];
 
-    const block = WebImporter.DOMUtils.createTable(cells, document);
+  // Create cells array for the table
+  const cells = [
+    headerRow,
+    ...cardCells
+  ];
 
-    element.replaceWith(block);
+  // Generate the block table
+  const blockTable = WebImporter.DOMUtils.createTable(cells, document);
+
+  // Replace the original element with the new block table
+  element.replaceWith(blockTable);
 }

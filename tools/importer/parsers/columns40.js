@@ -1,53 +1,52 @@
 export default function parse(element, {document}) {
-    // Helper function to extract tooltip content
-    function extractTooltipContent(el) {
-        const tooltipSpan = el.querySelector('.awt-tooltip > span');
-        return tooltipSpan ? tooltipSpan.textContent : "";
+  const headerCell = document.createElement('strong');
+  headerCell.textContent = 'Columns';
+  const headerRow = [headerCell];
+
+  const parseInlineElements = (section) => {
+    const container = document.createElement('div');
+    if (section) {
+      Array.from(section.childNodes).forEach((node) => {
+        if (node.nodeType === 3) { // Text node
+          const textNode = document.createElement('span');
+          textNode.textContent = node.textContent;
+          container.appendChild(textNode);
+        } else if (node.nodeType === 1 && node.classList.contains('awt-tooltip')) { // Element node for tooltip
+          const tooltip = document.createElement('span');
+          tooltip.className = 'tooltip';
+          tooltip.innerHTML = node.innerHTML;
+          container.appendChild(tooltip);
+        } else {
+          container.appendChild(node.cloneNode(true));
+        }
+      });
     }
+    return container;
+  };
 
-    // Extract relevant data from the given element
-    const paragraphs = Array.from(element.querySelectorAll('awt-article-section div[slot="paragraph"]'));
+  const firstSection = element.querySelector('awt-article-section div[slot="paragraph"]');
+  const paragraph1 = parseInlineElements(firstSection);
 
-    const cells = [];
+  const imageElement = element.querySelector('awt-image');
+  const image = document.createElement('img');
+  if (imageElement) {
+    image.src = imageElement.getAttribute('src');
+    image.alt = imageElement.getAttribute('altimage') || '';
+  }
 
-    // Create the header row
-    const headerRow = ["Columns"];
-    cells.push(headerRow);
+  const secondSection = element.querySelectorAll('awt-article-section div[slot="paragraph"]')[1];
+  const paragraph2 = parseInlineElements(secondSection);
 
-    paragraphs.forEach((paragraph) => {
-        const content = [];
+  const referenceText = document.createElement('span');
+  referenceText.textContent = imageElement ? imageElement.getAttribute('references') || '' : '';
 
-        paragraph.childNodes.forEach((child) => {
-            if (child.nodeType === 3) {
-                // Text node
-                content.push(child.textContent.trim());
-            } else if (child.tagName === 'SPAN' && child.classList.contains('awt-tooltip')) {
-                const tooltipText = extractTooltipContent(child);
-                content.push(`${child.childNodes[0].textContent.trim()} (${tooltipText})`);
-            } else if (child.tagName === 'SUP') {
-                content.push(`(${child.textContent.trim()})`);
-            }
-        });
+  const cells = [
+    headerRow,
+    [paragraph1, image],
+    [paragraph2, referenceText]
+  ];
 
-        cells.push([content.join(' ')]);
-    });
+  const block = WebImporter.DOMUtils.createTable(cells, document);
 
-    // Extract image data
-    const images = Array.from(element.querySelectorAll('awt-image'));
-    images.forEach((image) => {
-        const imgElement = document.createElement('img');
-        imgElement.src = image.getAttribute('src');
-        imgElement.alt = image.getAttribute('altimage') || "";
-
-        const references = image.getAttribute('references');
-        const referenceText = references ? `References: ${references}` : "";
-
-        cells.push([imgElement, document.createTextNode(referenceText)]);
-    });
-
-    // Create the table block
-    const block = WebImporter.DOMUtils.createTable(cells, document);
-
-    // Replace the original element with the block
-    element.replaceWith(block);
+  element.replaceWith(block);
 }

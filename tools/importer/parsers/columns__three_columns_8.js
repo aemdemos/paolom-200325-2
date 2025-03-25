@@ -1,36 +1,33 @@
 export default function parse(element, {document}) {
-  // Import the WebImporter.DOMUtils.createTable function
-  const createTable = WebImporter.DOMUtils.createTable;
+    const sections = element.querySelectorAll('awt-footer-section');
+    const footerBlocks = [];
 
-  // Extract footer sections dynamically
-  const sections = element.querySelectorAll('awt-footer-section');
+    // Extract content from each footer section
+    sections.forEach(section => {
+        const title = section.getAttribute('footertitle');
+        const links = Array.from(section.querySelectorAll('a')).map(link => {
+            const linkElement = document.createElement('a');
+            linkElement.href = link.href;
+            linkElement.target = link.target;
+            linkElement.innerHTML = link.innerHTML;
+            return linkElement;
+        });
 
-  // Map sections to table cells
-  const cells = Array.from(sections).map(section => {
-    const header = document.createElement('strong');
-    header.textContent = section.getAttribute('footertitle') || 'Untitled';
+        const titleElement = document.createElement('strong');
+        titleElement.textContent = title;
 
-    const links = Array.from(section.querySelectorAll('a')).map(link => {
-      const linkElement = document.createElement('a');
-      linkElement.href = link.href;
-      linkElement.target = link.target;
-      linkElement.innerHTML = link.innerHTML || 'Untitled link';
-      return linkElement;
+        footerBlocks.push([titleElement, links]);
     });
 
-    return [header, ...links];
-  });
+    // Create the table block
+    const headerCell = document.createElement('strong');
+    headerCell.textContent = 'Columns';
+    const headerRow = [headerCell];
+    const cells = [headerRow, ...footerBlocks];
+    const block = WebImporter.DOMUtils.createTable(cells, document);
 
-  // Add header row with exact match to the example
-  const headerCell = document.createElement('strong');
-  headerCell.textContent = 'Columns';
-  const headerRow = [headerCell];
+    // Replace the original element with the new table block
+    element.replaceWith(block);
 
-  const tableData = [headerRow, ...cells];
-
-  // Create the table using createTable utility
-  const table = createTable(tableData, document);
-
-  // Replace the original element with the table
-  element.replaceWith(table);
+    return block;
 }

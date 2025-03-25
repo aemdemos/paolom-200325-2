@@ -1,34 +1,37 @@
 export default function parse(element, {document}) {
-    // Extract the Diagnosis section content
-    const diagnosisSection = element.querySelector('awt-article-section div[slot="paragraph"]');
-    const diagnosisText = diagnosisSection ? diagnosisSection.textContent.trim() : 'No content available';
+  const createTable = WebImporter.DOMUtils.createTable;
 
-    // Extract the video thumbnail and link
-    const videoContainer = element.querySelector('awt-wistia-video');
-    const videoThumbnail = videoContainer ? videoContainer.querySelector('img[slot="thumbnail"]') : null;
-    const videoThumbnailElement = videoThumbnail ? document.createElement('img') : null;
-    if (videoThumbnailElement) {
-        videoThumbnailElement.src = videoThumbnail.getAttribute('src');
-        videoThumbnailElement.alt = 'Video Thumbnail';
-    }
+  // Extract content
+  const diagnosisSection = element.querySelector('awt-article-section div[slot="paragraph"]');
+  const diagnosisText = diagnosisSection ? diagnosisSection.textContent.trim() : 'No diagnosis text available';
 
-    // Create the header row to EXACTLY match the block type "Columns"
-    const headerRow = [document.createElement('strong')];
-    headerRow[0].textContent = 'Columns';
+  const videoThumbnail = element.querySelector('awt-wistia-video img[slot="thumbnail"]');
+  const videoThumbnailElement = videoThumbnail ? videoThumbnail.cloneNode(true) : document.createTextNode('No video available');
 
-    // Create the content rows dynamically ensuring no elements are missing
-    const contentRow1 = [
-        diagnosisText,
-        videoThumbnailElement || 'No video thumbnail available'
-    ];
+  // Correctly structure the first cell with a list
+  const list = document.createElement('ul');
+  const listItem1 = document.createElement('li');
+  listItem1.textContent = 'Diagnosis';
+  const listItem2 = document.createElement('li');
+  listItem2.textContent = diagnosisText;
+  list.appendChild(listItem1);
+  list.appendChild(listItem2);
 
-    // Create the table using WebImporter.DOMUtils.createTable
-    const cells = [
-        headerRow,
-        contentRow1
-    ];
-    const blockTable = WebImporter.DOMUtils.createTable(cells, document);
+  // Prepare the table header row
+  const headerCell = document.createElement('strong');
+  headerCell.textContent = 'Columns';
+  const headerRow = [headerCell];
 
-    // Replace the original element with the new block table
-    element.replaceWith(blockTable);
+  // Prepare the content row
+  const contentRow = [
+    list,
+    videoThumbnailElement
+  ];
+
+  // Generate the table
+  const cells = [headerRow, contentRow];
+  const blockTable = createTable(cells, document);
+
+  // Replace the original element
+  element.replaceWith(blockTable);
 }

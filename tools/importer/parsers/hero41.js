@@ -1,50 +1,54 @@
 export default function parse(element, {document}) {
-  const container = document.createElement('div');
-
-  // Extract the image
+  // Extract data from the element
+  const heading = element.querySelector('awt-article')?.getAttribute('standfirst');
+  const subheading = element.querySelector('awt-article-section div[slot="paragraph"]')?.innerHTML;
+  const ctaButton = element.querySelector('awt-btn');
+  const ctaText = ctaButton ? ctaButton.textContent.trim() : '';
+  const ctaLink = ctaButton ? ctaButton.getAttribute('href') : '';
   const imageElement = element.querySelector('awt-image');
-  const imageSrc = imageElement.getAttribute('src');
-  const image = document.createElement('img');
-  image.setAttribute('src', imageSrc);
+  const imageUrl = imageElement ? imageElement.getAttribute('src') : '';
 
-  // Extract the title
-  const titleElement = element.querySelector('awt-article');
-  const titleText = titleElement.getAttribute('standfirst');
-  const title = document.createElement('h1');
-  title.textContent = titleText;
+  // Construct the table rows
+  const headerCell = document.createElement('strong');
+  headerCell.textContent = 'Hero';
+  const headerRow = [headerCell];
 
-  // Extract the subheading
-  const subheadingElement = element.querySelector('awt-article-section div[slot="paragraph"]');
-  const subheadingHtml = subheadingElement?.innerHTML || ''; // Handle missing subheading
-  const subheading = document.createElement('p');
-  subheading.innerHTML = subheadingHtml;
+  const contentElements = [];
 
-  // Extract the call-to-action
-  const ctaElement = element.querySelector('awt-btn[slot="cta_buttons"]');
-  const ctaText = ctaElement?.textContent?.trim() || ''; // Handle missing CTA text
-  const ctaLink = ctaElement?.getAttribute('href') || ''; // Handle missing CTA link
-  const cta = document.createElement('a');
-  cta.textContent = ctaText;
-  cta.setAttribute('href', ctaLink);
+  // Add the image if available
+  if (imageUrl) {
+    const image = document.createElement('img');
+    image.setAttribute('src', imageUrl);
+    contentElements.push(image);
+  }
 
-  // Create cells array for table
-  const cells = [
-    [
-      (() => {
-        const headerCell = document.createElement('strong');
-        headerCell.textContent = 'Hero';
-        return headerCell;
-      })()
-    ],
-    [
-      image,
-      title,
-      subheadingHtml ? subheading : null, // Add subheading only if it exists
-      ctaText ? cta : null // Add CTA only if it exists
-    ].filter(Boolean) // Remove null entries to ensure clean structure
-  ];
+  // Add heading styled as a heading
+  if (heading) {
+    const headingElement = document.createElement('h1');
+    headingElement.textContent = heading;
+    contentElements.push(headingElement);
+  }
 
-  // Create the block table
+  // Add subheading styled as strong text
+  if (subheading) {
+    const subheadingElement = document.createElement('strong');
+    subheadingElement.innerHTML = subheading;
+    contentElements.push(subheadingElement);
+  }
+
+  // Add CTA styled as a link
+  if (ctaText && ctaLink) {
+    const ctaElement = document.createElement('a');
+    ctaElement.setAttribute('href', ctaLink);
+    ctaElement.setAttribute('target', '_blank');
+    ctaElement.textContent = ctaText;
+    contentElements.push(ctaElement);
+  }
+
+  const contentRow = [contentElements];
+
+  // Create block table
+  const cells = [headerRow, contentRow];
   const block = WebImporter.DOMUtils.createTable(cells, document);
 
   // Replace the original element

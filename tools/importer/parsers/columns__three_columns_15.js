@@ -1,51 +1,40 @@
 export default function parse(element, {document}) {
-  const headerRow = [document.createElement('strong')];
-  headerRow[0].textContent = 'Columns';
+    const cards = element.querySelectorAll('awt-category-card');
 
-  const cards = element.querySelectorAll('awt-category-card');
+    const headerCell = document.createElement('strong');
+    headerCell.textContent = 'Columns';
+    const cells = [[headerCell]];
 
-  const contentRow = Array.from(cards).map((card) => {
-    const imgElem = document.createElement('img');
-    const imageElement = card.querySelector('img');
-    if (imageElement) {
-      imgElem.src = imageElement.src;
-      imgElem.alt = imageElement.alt || '';
-    }
+    const row = Array.from(cards).map(card => {
+        const imgEl = card.querySelector('img');
+        const imgSrc = imgEl ? imgEl.getAttribute('src') : '';
+        const img = document.createElement('img');
+        if (imgSrc) {
+            img.src = imgSrc;
+        }
 
-    const headingElem = document.createElement('h2');
-    const headingElement = card.querySelector('h4');
-    if (headingElement) {
-      headingElem.textContent = headingElement.textContent.trim();
-    } else {
-      headingElem.textContent = '';
-    }
+        const titleEl = card.querySelector('h4');
+        const title = titleEl ? titleEl.textContent.trim() : 'Untitled';
+        const heading = document.createElement('h2');
+        heading.textContent = title;
 
-    const descElem = document.createElement('p');
-    const descElement = card.querySelector('p');
-    if (descElement) {
-      descElem.textContent = descElement.textContent.trim();
-    } else {
-      descElem.textContent = '';
-    }
+        const descriptionEl = card.querySelector('p');
+        const description = descriptionEl ? descriptionEl.textContent.trim() : 'No description available.';
+        const paragraph = document.createElement('p');
+        paragraph.textContent = description;
 
-    const linkElem = document.createElement('a');
-    const linkElement = card.querySelector('awt-btn');
-    if (linkElement && linkElement.hasAttribute('href')) {
-      linkElem.href = linkElement.getAttribute('href');
-      linkElem.textContent = linkElement.textContent.trim();
-    } else {
-      linkElem.href = '#';
-      linkElem.textContent = 'Read more';
-    }
+        const linkEl = card.querySelector('awt-btn');
+        const linkHref = linkEl ? linkEl.getAttribute('href').trim() : '#';
+        const linkText = linkEl ? linkEl.textContent.trim() : 'Read more';
+        const anchor = document.createElement('a');
+        anchor.href = linkHref;
+        anchor.textContent = linkText;
 
-    return [imgElem, headingElem, descElem, linkElem];
-  });
+        return [img, heading, paragraph, anchor];
+    });
 
-  const cells = [
-    headerRow,
-    contentRow.map((content) => content)
-  ];
+    cells.push(row);
 
-  const blockTable = WebImporter.DOMUtils.createTable(cells, document);
-  element.replaceWith(blockTable);
+    const table = WebImporter.DOMUtils.createTable(cells, document);
+    element.replaceWith(table);
 }

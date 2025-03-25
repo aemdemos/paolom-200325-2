@@ -1,53 +1,44 @@
 export default function parse(element, {document}) {
-  // Extract the title from the parent container
-  const titleContainer = element.querySelector('awt-article[standfirst]');
-  const titleText = titleContainer ? titleContainer.getAttribute('standfirst') : '';
-
-  // Wrap the title in a div to preserve the structure
-  const titleElement = document.createElement('div');
-  titleElement.textContent = titleText;
-
-  // Extract the list items from the paragraph section
-  const listContainer = element.querySelector('awt-article-section > div[slot="paragraph"] ul');
-  const listItems = listContainer ? Array.from(listContainer.querySelectorAll('li')).map(li => {
-    const link = li.querySelector('a');
-    const listItemElement = document.createElement('li');
-    if (link) {
-      const linkElement = document.createElement('a');
-      linkElement.href = link.href;
-      linkElement.textContent = link.textContent;
-      listItemElement.append(linkElement);
-    } else {
-      listItemElement.textContent = li.textContent;
-    }
-    return listItemElement;
-  }) : [];
-
-  const listElement = document.createElement('ul');
-  listElement.append(...listItems);
-
-  // Extract the image if present
-  const imageContainer = element.querySelector('awt-image');
-  let imageElement = null;
-  if (imageContainer) {
-    const img = document.createElement('img');
-    img.src = imageContainer.getAttribute('src');
-    img.alt = imageContainer.getAttribute('altimage') || '';
-    imageElement = img;
-  }
-
-  // Create a structured table using WebImporter.DOMUtils.createTable
+  // Create the header row using proper HTML elements
   const headerCell = document.createElement('strong');
   headerCell.textContent = 'Columns';
+  const headerRow = [headerCell];
 
+  // Extract the "Previous events" text and dynamically build the list of links
+  const previousEventsText = element.querySelector('awt-article[standfirst]')?.getAttribute('standfirst') || '';
+  const links = Array.from(element.querySelectorAll('ul li a')).map((link) => {
+    const anchor = document.createElement('a');
+    anchor.href = link.href;
+    anchor.target = link.target;
+    anchor.rel = link.rel;
+    anchor.textContent = link.textContent;
+    const listItem = document.createElement('li');
+    listItem.appendChild(anchor);
+    return listItem;
+  });
+
+  const linkList = document.createElement('ul');
+  links.forEach((listItem) => linkList.appendChild(listItem));
+
+  // Extract and dynamically handle the image
+  const image = element.querySelector('awt-image');
+  let imageElement = null;
+  if (image && image.getAttribute('src')) {
+    imageElement = document.createElement('img');
+    imageElement.src = image.getAttribute('src');
+    imageElement.alt = image.getAttribute('altimage') || '';
+  }
+
+  // Create structured content rows for the table
   const cells = [
-    [headerCell], // Header row
-    [titleElement, imageElement], // First content row
-    [listElement, ''] // Second content row with list and placeholder
+    headerRow,
+    [previousEventsText, imageElement],
+    [linkList]
   ];
 
-  const newBlock = WebImporter.DOMUtils.createTable(cells, document);
+  // Use the helper function to create the block table
+  const blockTable = WebImporter.DOMUtils.createTable(cells, document);
 
-  // Replace the original element with the new block
-  element.replaceWith(newBlock);
+  // Replace the original element with the new table
+  element.replaceWith(blockTable);
 }

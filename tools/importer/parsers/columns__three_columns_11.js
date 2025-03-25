@@ -1,51 +1,39 @@
 export default function parse(element, {document}) {
-    // Helper function for creating bold headers
-    const createHeader = (text) => {
-        const strongHeader = document.createElement('strong');
-        strongHeader.textContent = text;
-        return strongHeader;
-    };
+  const sections = Array.from(element.querySelectorAll('awt-footer-section'));
 
-    // Extract footer sections
-    const footerSections = element.querySelectorAll('awt-footer-section');
+  const cells = [];
 
-    // Prepare cells for the table
-    const cells = [];
+  // Create the header row
+  const headerRow = ['Columns'];
+  cells.push(headerRow);
 
-    // Add the header row
-    cells.push([createHeader('Columns')]);
+  // Create the content rows
+  const contentRow = sections.map((section) => {
+    const columnContent = document.createElement('div');
 
-    // Process each footer section
-    const columns = [];
-    footerSections.forEach((section) => {
-        const columnContent = [];
+    // Add the title
+    const title = document.createElement('h2');
+    title.textContent = section.getAttribute('footertitle');
+    columnContent.appendChild(title);
 
-        // Add the column title
-        const titleHeader = document.createElement('h2');
-        titleHeader.textContent = section.getAttribute('footertitle');
-        titleHeader.style.fontWeight = 'bold';
-        columnContent.push(titleHeader);
-
-        // Add links within the section
-        const links = section.querySelectorAll('a');
-        links.forEach((link) => {
-            const linkElement = document.createElement('p');
-            const anchor = document.createElement('a');
-            anchor.textContent = link.textContent;
-            anchor.href = link.href;
-            linkElement.appendChild(anchor);
-            columnContent.push(linkElement);
-        });
-
-        columns.push(columnContent);
+    // Add the links
+    const links = section.querySelectorAll('a');
+    links.forEach((link) => {
+      const linkElement = document.createElement('a');
+      linkElement.href = link.href;
+      linkElement.textContent = link.textContent;
+      columnContent.appendChild(linkElement);
+      columnContent.appendChild(document.createElement('br'));
     });
 
-    // Add the row for columns
-    cells.push(columns);
+    return columnContent;
+  });
 
-    // Create the block table
-    const block = WebImporter.DOMUtils.createTable(cells, document);
+  cells.push(contentRow);
 
-    // Replace the original element with the block
-    element.replaceWith(block);
+  // Create the block table
+  const blockTable = WebImporter.DOMUtils.createTable(cells, document);
+
+  // Replace the original element
+  element.replaceWith(blockTable);
 }

@@ -1,32 +1,48 @@
 export default function parse(element, {document}) {
-  // Importing WebImporter.DOMUtils
-  const { createTable } = WebImporter.DOMUtils;
+    // Validate element is not null or undefined
+    if (!element || !document) {
+        throw new Error('Element or document is missing');
+    }
 
-  // Extract information from the input element
-  const notificationSpan = element.querySelector('span');
-  const notificationText = notificationSpan ? notificationSpan.textContent.trim() : 'No notification text'; // Handle missing text gracefully
+    // Create the header row dynamically to match the block type
+    const headerRow = [document.createElement('strong')];
+    headerRow[0].textContent = 'Tabs';
 
-  const linkElement = element.querySelector('a');
-  const linkText = linkElement ? linkElement.textContent.trim() : 'No link text'; // Handle missing link gracefully
-  const linkHref = linkElement ? linkElement.getAttribute('href') : '#'; // Default href if not provided
+    // Dynamically extract content from the provided HTML
+    const spanElement = element.querySelector('span'); // Extract the span text
+    const anchorElement = element.querySelector('a'); // Extract the anchor element
 
-  // Create structured content for the table rows
-  const cells = [
-    // Header row indicating the block type
-    [(() => { const strong = document.createElement('strong'); strong.textContent = 'Tabs'; return strong; })()],
-    // Data rows
-    ['Notification', notificationText],
-    ['Link', (() => { 
-        const a = document.createElement('a');
-        a.href = linkHref;
-        a.textContent = linkText;
-        return a;
-      })()]
-  ];
+    // Handle cases where elements might be missing
+    let tabOneContent, tabTwoContent;
 
-  // Create the block table
-  const table = createTable(cells, document);
+    if (spanElement) {
+        tabOneContent = document.createElement('p');
+        tabOneContent.textContent = spanElement.textContent.trim(); // Ensure text is trimmed
+    } else {
+        tabOneContent = document.createElement('p');
+        tabOneContent.textContent = 'No content available for Tab One'; // Fallback content
+    }
 
-  // Replace the original element with the structured block table
-  element.replaceWith(table);
+    if (anchorElement) {
+        tabTwoContent = anchorElement.cloneNode(true); // Clone anchor to preserve attributes
+    } else {
+        tabTwoContent = document.createElement('p');
+        tabTwoContent.textContent = 'No content available for Tab Two'; // Fallback content
+    }
+
+    // Construct the cells array for the table
+    const cells = [
+        headerRow, // Header row
+        ['Tab One', tabOneContent],
+        ['Tab Two', tabTwoContent],
+    ];
+
+    // Create the block table using the provided helper function
+    const blockTable = WebImporter.DOMUtils.createTable(cells, document);
+
+    // Replace the original element with the newly created block table
+    element.replaceWith(blockTable);
+
+    // Return the block table for further processing if needed
+    return blockTable;
 }

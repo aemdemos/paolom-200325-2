@@ -1,33 +1,29 @@
 export default function parse(element, {document}) {
-    const createTable = WebImporter.DOMUtils.createTable;
+  const headerRow = [document.createElement('strong')];
+  headerRow[0].textContent = 'Columns';
 
-    // Extracting content from the element
-    const tabs = element.querySelectorAll('awt-tab-menu awt-tab-item');
+  const tabElements = element.querySelectorAll('awt-tab-item');
+  const tabContents = Array.from(tabElements).map(tab => {
+    const buttonText = tab.querySelector('button').textContent.trim();
+    const contentId = tab.getAttribute('contentid');
+    const tabContent = element.querySelector(`#${contentId}`);
+    const image = tabContent.querySelector('awt-image');
+    let imageElement = null;
+    let descriptionElement = null;
 
-    const cells = [];
+    if (image) {
+      imageElement = document.createElement('img');
+      imageElement.src = image.getAttribute('src');
 
-    // Header Row (Columns block)
-    const headerRow = ['Columns block'];
-    cells.push(headerRow);
+      descriptionElement = document.createElement('p');
+      descriptionElement.innerHTML = image.getAttribute('references');
+    }
 
-    // Content rows
-    tabs.forEach(tab => {
-        const buttonText = tab.querySelector('button').textContent;
-        const tabContent = element.querySelector(`div[id="${tab.getAttribute('contentid')}"] awt-image`);
+    return [buttonText, imageElement && descriptionElement ? [imageElement, descriptionElement] : ''];
+  });
 
-        if (tabContent) {
-            const image = document.createElement('img');
-            image.src = tabContent.getAttribute('src');
-            image.alt = tabContent.getAttribute('references') || '';
-            cells.push([buttonText, image]);
-        } else {
-            cells.push([buttonText, 'No content available']); // Handle missing content edge case
-        }
-    });
+  const cells = [headerRow, ...tabContents];
+  const block = WebImporter.DOMUtils.createTable(cells, document);
 
-    // Create table block
-    const block = createTable(cells, document);
-
-    // Replace original element with block
-    element.replaceWith(block);
+  element.replaceWith(block);
 }

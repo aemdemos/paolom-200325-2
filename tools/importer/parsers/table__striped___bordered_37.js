@@ -1,28 +1,44 @@
 export default function parse(element, {document}) {
-    const headerRow = [document.createElement('strong')];
-    headerRow[0].textContent = 'Table (striped & bordered)';
+  // Extract the flag image, country name, and language link
+  const flag = element.querySelector('.map-link-sections-row-flag img');
+  const countryName = element.querySelector('.map-link-sections-row-country-name');
+  const languageLink = element.querySelector('.map-link-sections-row-country-language a');
 
-    const flagImage = element.querySelector('.map-link-sections-row-flag img');
-    const countryName = element.querySelector('.map-link-sections-row-country-name');
-    const languageLink = element.querySelector('.map-link-sections-row-country-language a');
+  // Validate extracted elements; handle missing data gracefully
+  if (!flag || !countryName || !languageLink) {
+    console.error('Missing data in the element');
+    return;
+  }
 
-    const flagCell = document.createElement('img');
-    flagCell.src = flagImage ? flagImage.src : '';
-    flagCell.alt = flagImage ? flagImage.alt : '';
+  // Create cells array for the table
+  const cells = [];
 
-    const countryCell = document.createElement('p');
-    countryCell.textContent = countryName ? countryName.textContent.trim() : '';
+  // Header row indicating block type
+  const headerCell = document.createElement('strong');
+  headerCell.textContent = 'Table (striped, bordered)';
+  const headerRow = [headerCell];
+  cells.push(headerRow);
 
-    const languageCell = document.createElement('a');
-    languageCell.href = languageLink ? languageLink.href : '#';
-    languageCell.textContent = languageLink ? languageLink.textContent.trim() : '';
+  // Content row with the data
+  const flagImg = document.createElement('img');
+  flagImg.src = flag.getAttribute('src');
+  flagImg.alt = flag.getAttribute('alt');
 
-    const cells = [
-        headerRow,
-        [flagCell, countryCell, languageCell]
-    ];
+  const countryText = countryName.textContent.trim();
 
-    const blockTable = WebImporter.DOMUtils.createTable(cells, document);
+  const languageAnchor = document.createElement('a');
+  languageAnchor.href = languageLink.getAttribute('href');
+  languageAnchor.textContent = languageLink.textContent.trim();
 
-    element.replaceWith(blockTable);
+  cells.push([
+    flagImg, // Flag image
+    countryText, // Country name (plain text)
+    languageAnchor // Language link
+  ]);
+
+  // Create the block table
+  const blockTable = WebImporter.DOMUtils.createTable(cells, document);
+
+  // Replace the original element with the block table
+  element.replaceWith(blockTable);
 }

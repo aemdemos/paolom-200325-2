@@ -1,36 +1,36 @@
 export default function parse(element, {document}) {
-    // Ensure dynamic extraction of content from the provided element
-    const title = element.querySelector('.awt-error-page__title');
-    const description = element.querySelector('.awt-error-page__description');
-    const buttons = element.querySelectorAll('awt-btn');
+  // Step 1: Create a header for the table with the block name
+  const headerCell = document.createElement('strong');
+  headerCell.textContent = 'Columns'; // Matches the example block name
+  const headerRow = [headerCell];
 
-    // Create structured rows dynamically
-    const headerCell = document.createElement('strong');
-    headerCell.textContent = 'Columns';
-    const headerRow = [headerCell];
+  // Step 2: Extract content dynamically from the element
+  const titleParagraph = element.querySelector('.awt-error-page__title');
+  const descriptionParagraph = element.querySelector('.awt-error-page__description');
 
-    const contentRows = Array.from(buttons).map(button => {
-        const link = document.createElement('a');
-        link.href = button.getAttribute('href');
-        link.textContent = button.textContent.trim();
-        return [link];
-    });
+  const titleContent = titleParagraph ? titleParagraph.textContent : '';
+  const descriptionContent = descriptionParagraph ? descriptionParagraph.innerHTML : '';
 
-    const descriptionRow = [
-        title ? title.textContent.trim() : '',
-        description ? description.innerHTML : ''
-    ];
+  const buttons = element.querySelectorAll('awt-btn');
+  const buttonLinks = Array.from(buttons).map(btn => {
+    const link = document.createElement('a');
+    link.href = btn.getAttribute('href');
+    link.textContent = btn.textContent.trim();
+    return link;
+  });
 
-    // Combine rows into a cell structure
-    const cells = [
-        headerRow,
-        descriptionRow,
-        ...contentRows
-    ];
+  // Step 3: Combine extracted content and buttons into a single multi-column row
+  const contentRow = [titleContent, descriptionContent, buttonLinks];
 
-    // Create the table block using the helper function
-    const block = WebImporter.DOMUtils.createTable(cells, document);
+  // Step 4: Construct the cells array for the table
+  const cells = [
+    headerRow, // Header row indicating block type
+    contentRow // Multi-column row with extracted text and buttons
+  ];
 
-    // Replace the original element dynamically
-    element.replaceWith(block);
+  // Step 5: Use the helper function to create the block table
+  const blockTable = WebImporter.DOMUtils.createTable(cells, document);
+
+  // Step 6: Replace the original element with the new block table
+  element.replaceWith(blockTable);
 }

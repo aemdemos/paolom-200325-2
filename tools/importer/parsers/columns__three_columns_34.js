@@ -1,48 +1,44 @@
-export default function parse(element, {document}) {
-    // Helper function to create an image element
-    function createImage(src, alt) {
-        const img = document.createElement('img');
-        img.setAttribute('src', src);
-        img.setAttribute('alt', alt);
-        return img;
+export default function parse(element, { document }) {
+  const cards = element.querySelectorAll('awt-category-card');
+
+  // Header row indicating the block type
+  const headerCell = document.createElement('strong');
+  headerCell.textContent = 'Columns';
+  const cells = [[headerCell]];
+
+  // Create content rows for each card
+  const contentRow = Array.from(cards).map((card) => {
+    const link = card.getAttribute('href');
+
+    const titleElement = card.querySelector('h4');
+    const descriptionElement = card.querySelector('div');
+    const imageElement = card.querySelector('img');
+
+    const title = document.createElement('h3');
+    title.textContent = titleElement ? titleElement.textContent.trim() : '';
+
+    const description = document.createElement('p');
+    description.innerHTML = descriptionElement ? descriptionElement.innerHTML.trim() : '';
+
+    const image = document.createElement('img');
+    if (imageElement) {
+      image.src = imageElement.src;
+      image.alt = imageElement.alt || '';
     }
 
-    // Extract cards from the container
-    const cards = element.querySelectorAll('awt-category-card');
+    const contentCell = document.createElement('a');
+    contentCell.href = link || '#';
+    contentCell.append(image, title, description);
 
-    // Prepare the header row
-    const headerRow = [document.createElement('strong')];
-    headerRow[0].textContent = 'Columns';
+    return [contentCell];
+  });
 
-    // Prepare the content row
-    const contentRow = Array.from(cards).map(card => {
-        const title = card.querySelector('h4[slot="cardCategory"]')?.textContent || '';
-        const description = card.querySelector('div[slot="cardDescription"]')?.innerHTML || '';
-        const imageSrc = card.querySelector('img[slot="image-category"]')?.getAttribute('src') || '';
-        const imageAlt = card.querySelector('img[slot="image-category"]')?.getAttribute('alt') || '';
-        const href = card.getAttribute('href') || '';
+  // Combine content rows
+  cells.push(contentRow.flat());
 
-        const columnHeader = document.createElement('h3');
-        columnHeader.textContent = title;
+  // Create the table block
+  const block = WebImporter.DOMUtils.createTable(cells, document);
 
-        const columnDescription = document.createElement('p');
-        columnDescription.innerHTML = description;
-
-        const columnImage = createImage(imageSrc, imageAlt);
-
-        const columnLink = document.createElement('a');
-        columnLink.setAttribute('href', href);
-        columnLink.append(columnImage);
-
-        return [columnLink, columnHeader, columnDescription];
-    });
-
-    // Assemble the cells array
-    const cells = [headerRow, contentRow];
-
-    // Create the table
-    const blockTable = WebImporter.DOMUtils.createTable(cells, document);
-
-    // Replace the original element
-    element.replaceWith(blockTable);
+  // Replace the original element with the new block
+  element.replaceWith(block);
 }

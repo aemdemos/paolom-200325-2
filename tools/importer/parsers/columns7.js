@@ -1,38 +1,41 @@
 export default function parse(element, {document}) {
-  const cells = [];
+  // Extract relevant content from the input HTML
+  const mediaCaption = element.querySelector('awt-media-caption');
+  const videoElement = mediaCaption.querySelector('awt-wistia-video');
+  const videoSrc = videoElement ? videoElement.querySelector('video')?.getAttribute('src') : null;
+  const thumbnail = videoElement ? videoElement.querySelector('img')?.getAttribute('src') : null;
 
-  // Header Row
-  const headerCell = document.createElement('strong');
-  headerCell.textContent = 'Columns';
-  const headerRow = [headerCell];
-  cells.push(headerRow);
+  const articleElement = mediaCaption.querySelector('awt-article');
+  const standfirst = articleElement?.getAttribute('standfirst');
 
-  // Second Row
-  const videoCell = document.createElement('div');
-  const video = element.querySelector('awt-wistia-video');
+  // Prepare the block table structure
+  const headerRow = [
+    (() => {
+      const headerCell = document.createElement('strong');
+      headerCell.textContent = 'Columns';
+      return headerCell;
+    })()
+  ];
 
-  if (video) {
-    const videoClone = video.cloneNode(true);
-    videoCell.appendChild(videoClone);
-  } else {
-    videoCell.textContent = 'Video not found';
-  }
+  const contentRow = [
+    videoSrc && thumbnail ? (() => {
+      const img = document.createElement('img');
+      img.src = thumbnail;
+      img.alt = 'Video Thumbnail';
+      return img;
+    })() : null,
+    standfirst ? (() => {
+      const caption = document.createElement('div');
+      caption.textContent = standfirst;
+      return caption;
+    })() : null
+  ];
 
-  const captionCell = document.createElement('div');
-  const caption = element.querySelector('awt-article[standfirst]');
+  const cells = [headerRow, contentRow];
 
-  if (caption) {
-    const standfirstText = caption.getAttribute('standfirst');
-    captionCell.textContent = standfirstText ? standfirstText : 'Caption not found';
-  } else {
-    captionCell.textContent = 'Caption not found';
-  }
+  // Create the block table
+  const block = WebImporter.DOMUtils.createTable(cells, document);
 
-  cells.push([videoCell, captionCell]);
-
-  // Create the table
-  const blockTable = WebImporter.DOMUtils.createTable(cells, document);
-
-  // Replace the original element with the new table
-  element.replaceWith(blockTable);
+  // Replace original element with the block
+  element.replaceWith(block);
 }
