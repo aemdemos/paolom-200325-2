@@ -1,30 +1,46 @@
 export default function parse(element, {document}) {
-    const cells = [];
+  // Import the WebImporter.DOMUtils.createTable helper
+  const createTable = WebImporter.DOMUtils.createTable;
 
-    // Header row
-    const headerCell = document.createElement('strong');
-    headerCell.textContent = 'Cards (no images)';
-    const headerRow = [headerCell];
-    cells.push(headerRow);
+  // Extract navigation items from the provided element
+  const navItems = element.querySelectorAll('awtcustom-header-nav-item');
 
-    // Process nav items in the header
-    const navItems = element.querySelectorAll('awtcustom-header-nav-item');
-    navItems.forEach((navItem) => {
-        const anchor = navItem.querySelector('a');
-        if (anchor) {
-            const title = anchor.textContent.trim();
+  // Create the header row for the table
+  const headerCell = document.createElement('strong');
+  headerCell.textContent = 'Cards (no images)';
+  const headerRow = [headerCell];
 
-            const heading = document.createElement('strong');
-            heading.textContent = title;
+  // Create rows based on navigation items
+  const rows = Array.from(navItems).map((navItem) => {
+    const link = navItem.querySelector('a');
 
-            // Push single-cell row with the heading element
-            cells.push([heading]);
-        }
-    });
+    // Extract content and combine title and description in a single cell
+    const title = link ? link.textContent.trim() : '';
+    const description = link ? `Navigate to ${link.href}` : '';
 
-    // Create the table
-    const table = WebImporter.DOMUtils.createTable(cells, document);
+    const cellContent = [];
 
-    // Replace the original element
-    element.replaceWith(table);
+    if (title) {
+      const heading = document.createElement('strong');
+      heading.textContent = title;
+      cellContent.push(heading);
+    }
+
+    if (description) {
+      const paragraph = document.createElement('p');
+      paragraph.textContent = description;
+      cellContent.push(paragraph);
+    }
+
+    return [cellContent];
+  });
+
+  // Combine rows including the header
+  const cells = [headerRow, ...rows];
+
+  // Create the block table using createTable
+  const block = createTable(cells, document);
+
+  // Replace the original element with the new block table
+  element.replaceWith(block);
 }

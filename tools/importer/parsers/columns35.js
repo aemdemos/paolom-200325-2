@@ -1,113 +1,57 @@
 export default function parse(element, {document}) {
-    // Import the utility for table creation
-    const { createTable } = WebImporter.DOMUtils;
+    // Create header row for the table
+    const headerRow = ['Columns'];
 
-    // Extract hero section content
-    const hero = element.querySelector('awt-hero');
-    const backgroundImage = hero.querySelector('img[slot="background-image"]');
-    const heroText = hero.querySelector('awt-hero-text');
-    const title = heroText.querySelector('span[slot="textTitle"]');
-    const description = heroText.querySelector('span[slot="textDescription"]');
-    const ctaButton = hero.querySelector('awt-btn');
+    // Extract content dynamically from the element
+    const titleText = element.querySelector("[slot='textTitle']")?.innerText || '';
+    const descriptionText = element.querySelector("[slot='textDescription']")?.innerHTML || '';
+    const imageSrc = element.querySelector("img[slot='background-image']")?.getAttribute('src') || null;
+    const registerButton = element.querySelector("awt-btn[slot='cta_buttons']") || null;
 
-    // Extract modal content
-    const modal = element.querySelector('awt-modal-hcp');
-    const modalTitle = modal.getAttribute('modaltitle');
-    const modalNotice = modal.getAttribute('notice');
-    const modalLogo = modal.querySelector('img[slot="logo"]');
-    const modalContentBlocks = Array.from(
-        modal.querySelectorAll('awt-modal-hcp-block')
-    );
+    // Create a multi-column structure for content
+    const contentRow = [];
 
-    // Extract registration form content
-    const form = element.querySelector('form');
-
-    // Create the cells array for the table
-    const cells = [];
-
-    // Header row - block name
-    const headerRow = [document.createElement('strong')];
-    headerRow[0].textContent = 'Columns';
-    cells.push(headerRow);
-
-    // Hero section row
-    const heroColumn = document.createElement('div');
-    if (backgroundImage) {
-        const image = document.createElement('img');
-        image.src = backgroundImage.src;
-        image.alt = backgroundImage.alt;
-        heroColumn.appendChild(image);
+    // Left column: title, description, and button grouped together
+    const leftCellContent = [];
+    if (titleText) {
+        const titleElement = document.createElement('p');
+        titleElement.textContent = titleText;
+        leftCellContent.push(titleElement);
     }
-    if (title) {
-        const titleElement = document.createElement('h1');
-        titleElement.innerHTML = title.innerHTML;
-        heroColumn.appendChild(titleElement);
-    }
-    if (description) {
+
+    if (descriptionText) {
         const descriptionElement = document.createElement('p');
-        descriptionElement.innerHTML = description.innerHTML;
-        heroColumn.appendChild(descriptionElement);
-    }
-    if (ctaButton) {
-        const button = document.createElement('a');
-        button.href = ctaButton.getAttribute('href');
-        button.textContent = ctaButton.textContent.trim();
-        button.style.backgroundColor = ctaButton.getAttribute('backgroundcolor');
-        button.style.color = ctaButton.getAttribute('textcolor');
-        heroColumn.appendChild(button);
+        descriptionElement.innerHTML = descriptionText;
+        leftCellContent.push(descriptionElement);
     }
 
-    // Modal content row
-    const modalColumn = document.createElement('div');
-    if (modalTitle) {
-        const titleElement = document.createElement('h2');
-        titleElement.textContent = modalTitle;
-        modalColumn.appendChild(titleElement);
-    }
-    if (modalNotice) {
-        const noticeElement = document.createElement('p');
-        noticeElement.innerHTML = modalNotice;
-        modalColumn.appendChild(noticeElement);
-    }
-    if (modalLogo) {
-        const logo = document.createElement('img');
-        logo.src = modalLogo.src;
-        logo.alt = modalLogo.alt;
-        modalColumn.appendChild(logo);
-    }
-    modalContentBlocks.forEach((block) => {
-        const blockText = block.getAttribute('text');
-        const blockButton = block.querySelector('awt-btn');
-        const blockElement = document.createElement('div');
-
-        if (blockText) {
-            const textElement = document.createElement('p');
-            textElement.textContent = blockText;
-            blockElement.appendChild(textElement);
-        }
-        if (blockButton) {
-            const button = document.createElement('a');
-            button.href = blockButton.getAttribute('href');
-            button.textContent = blockButton.textContent.trim();
-            blockElement.appendChild(button);
-        }
-        modalColumn.appendChild(blockElement);
-    });
-
-    // Form row
-    const formColumn = document.createElement('div');
-    if (form) {
-        const formClone = form.cloneNode(true);
-        formColumn.appendChild(formClone);
+    if (registerButton && registerButton.getAttribute('href')) {
+        const buttonElement = document.createElement('a');
+        buttonElement.href = registerButton.getAttribute('href');
+        buttonElement.textContent = registerButton.textContent.trim();
+        leftCellContent.push(buttonElement);
     }
 
-    // Add rows to the cells array
-    cells.push([heroColumn, modalColumn]);
-    cells.push([formColumn]);
+    contentRow.push(leftCellContent);
 
-    // Create the block table
-    const blockTable = createTable(cells, document);
+    // Right column: image (if available)
+    if (imageSrc) {
+        const imageElement = document.createElement('img');
+        imageElement.src = imageSrc;
+        contentRow.push([imageElement]);
+    } else {
+        contentRow.push([]); // Add empty cell if no image is present
+    }
 
-    // Replace the original element with the new block table
-    element.replaceWith(blockTable);
+    // Combine header and content into a table
+    const cells = [
+        headerRow,
+        contentRow
+    ];
+
+    // Create the block table using WebImporter.DOMUtils.createTable
+    const block = WebImporter.DOMUtils.createTable(cells, document);
+
+    // Replace the original element with the block table
+    element.replaceWith(block);
 }

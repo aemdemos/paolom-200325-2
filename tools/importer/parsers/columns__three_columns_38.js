@@ -1,39 +1,46 @@
 export default function parse(element, {document}) {
-    // Helper function to extract text content from child nodes
-    const extractText = (el) => {
-        if (!el) return '';
-        return el.textContent.trim();
-    };
-
-    // Extract the tabs and associated content
-    const tabs = Array.from(element.querySelectorAll('awt-tab-item button'));
+    // Extract tab items and contents
+    const tabs = Array.from(element.querySelectorAll('awt-tab-item'));
     const contents = Array.from(element.querySelectorAll('[slot="content"]'));
 
-    // Build the cell structure for the table
-    const cells = [];
-
-    // Header row defining the block type
+    // Create header row with block name
     const headerCell = document.createElement('strong');
     headerCell.textContent = 'Columns';
     const headerRow = [headerCell];
-    cells.push(headerRow);
 
-    // Rows with tab content
+    // Create rows for tab contents
     const contentRows = tabs.map((tab, index) => {
-        const title = document.createElement('h2');
-        title.textContent = extractText(tab);
+        const title = tab.querySelector('button')?.textContent;
+        const contentSlot = contents[index];
+        const sectionTitle = document.createElement('h2');
+        sectionTitle.textContent = title;
 
-        const contentDiv = document.createElement('div');
-        contentDiv.innerHTML = contents[index] ? contents[index].innerHTML : '';
+        const contentElements = [];
 
-        return [title, contentDiv];
+        // Process images
+        const image = contentSlot.querySelector('awt-image');
+        if (image) {
+            const imgElement = document.createElement('img');
+            imgElement.src = image.getAttribute('src');
+            imgElement.alt = image.getAttribute('altimage') || '';
+            contentElements.push(imgElement);
+        }
+
+        // Process articles and description
+        const article = contentSlot.querySelector('awt-article-section > div[slot="paragraph"]');
+        if (article) {
+            const articleText = document.createElement('p');
+            articleText.innerHTML = article.innerHTML;
+            contentElements.push(articleText);
+        }
+
+        return [sectionTitle, contentElements];
     });
 
-    cells.push(...contentRows);
+    // Merge rows into cells array
+    const cells = [headerRow, ...contentRows];
 
-    // Create the block table
-    const blockTable = WebImporter.DOMUtils.createTable(cells, document);
-
-    // Replace the input element with the new structured block table
-    element.replaceWith(blockTable);
+    // Create table and replace element
+    const block = WebImporter.DOMUtils.createTable(cells, document);
+    element.replaceWith(block); // Replace the original element with the new table
 }

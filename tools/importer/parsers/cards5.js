@@ -1,73 +1,94 @@
 export default function parse(element, {document}) {
-    const cells = [];
+  // Initialize cells array
+  const cells = [];
 
-    // Block name row
-    const headerCell = document.createElement('strong');
-    headerCell.textContent = 'Cards';
-    cells.push([headerCell]);
+  // Add header row
+  const headerRow = ['Cards'];
+  cells.push(headerRow);
 
-    // Extract legal links section
-    const legalLinks = element.querySelector('.awt-footer-legal-links');
-    if (legalLinks) {
-        const links = Array.from(legalLinks.querySelectorAll('a')).map(link => {
-            const anchor = document.createElement('a');
-            anchor.href = link.href;
-            anchor.textContent = link.textContent;
-            return anchor;
-        });
+  // Helper function to create a well-structured row for the table
+  const createCardRow = (imageSrc, heading, description, links) => {
+    const imageElement = document.createElement('img');
+    imageElement.src = imageSrc || '';
 
-        const cellContent = document.createElement('div');
-        links.forEach(link => {
-            cellContent.appendChild(link);
-            cellContent.appendChild(document.createTextNode(' • '));
-        });
-        if (cellContent.lastChild && cellContent.lastChild.nodeType === 3) {
-            cellContent.removeChild(cellContent.lastChild); // Remove trailing separator
-        }
-        cells.push([cellContent, '']);
+    const textContainer = document.createElement('div');
+
+    if (heading) {
+      const headingElement = document.createElement('p');
+      headingElement.textContent = heading;
+      textContainer.appendChild(headingElement);
     }
 
-    // Extract inquiries section
-    const inquiries = element.querySelector('.awt-footer-legal-inquiries');
-    if (inquiries) {
-        const inquiryContent = document.createElement('div');
-        inquiries.childNodes.forEach(node => {
-            if (node.nodeType === 3) {
-                inquiryContent.appendChild(document.createTextNode(node.textContent.trim()));
-            } else if (node.nodeName === 'A') {
-                const anchor = document.createElement('a');
-                anchor.href = node.href;
-                anchor.textContent = node.textContent;
-                inquiryContent.appendChild(anchor);
-            }
-        });
-        cells.push([inquiryContent, '']);
+    if (description) {
+      const descriptionElement = document.createElement('p');
+      descriptionElement.textContent = description;
+      textContainer.appendChild(descriptionElement);
     }
 
-    // Extract copyright section
-    const copyrightInfo = element.querySelector('.awt-footer-legal-copyright');
-    if (copyrightInfo) {
-        const copyrightContent = document.createElement('div');
-        copyrightInfo.childNodes.forEach(node => {
-            if (node.nodeType === 3 || node.nodeName === 'SUP') {
-                copyrightContent.appendChild(node.cloneNode(true));
-            }
-        });
-        cells.push([copyrightContent, '']);
+    if (links && links.length > 0) {
+      links.forEach((link) => {
+        const linkElement = document.createElement('a');
+        linkElement.href = link.href;
+        linkElement.textContent = link.textContent;
+        textContainer.appendChild(linkElement);
+      });
     }
 
-    // Extract logo section
-    const logoImage = element.querySelector('.awt-footer-logo img');
-    if (logoImage) {
-        const img = document.createElement('img');
-        img.src = logoImage.src;
-        img.alt = logoImage.alt;
-        const cellContent = document.createElement('div');
-        cellContent.appendChild(img);
-        cells.push([cellContent, '']);
-    }
+    return [imageElement, textContainer];
+  };
 
-    // Create the table and replace the element
-    const block = WebImporter.DOMUtils.createTable(cells, document);
-    element.replaceWith(block);
+  // Extract and iterate through sections
+  const logo = element.querySelector('.awt-footer-logo img');
+  const logoRow = createCardRow(
+    logo ? logo.src : '', 
+    'Logo', 
+    'Alexion Pharmaceuticals Logo', 
+    null
+  );
+  cells.push(logoRow);
+
+  const legalLinks = element.querySelector('.awt-footer-legal-links');
+  if (legalLinks) {
+    const links = Array.from(legalLinks.querySelectorAll('a'));
+    const legalRow = createCardRow(
+      null, 
+      'Legal Links', 
+      'Links related to legal statements and privacy information.', 
+      links
+    );
+    cells.push(legalRow);
+  }
+
+  const inquiries = element.querySelector('.awt-footer-legal-inquiries');
+  if (inquiries) {
+    const inquiriesLinks = inquiries.querySelectorAll('a');
+    const inquiriesRow = createCardRow(
+      null, 
+      'Inquiries', 
+      inquiries.textContent.trim(), 
+      Array.from(inquiriesLinks)
+    );
+    cells.push(inquiriesRow);
+  }
+
+  const copyright = element.querySelector('.awt-footer-legal-copyright');
+  if (copyright) {
+    const description = copyright.innerHTML
+      .replace(/<br\s*\/?>/g, '\n')
+      .replace(/<[^>]*>/g, '')
+      .trim();
+    const copyrightRow = createCardRow(
+      null, 
+      'Copyright', 
+      description, 
+      null
+    );
+    cells.push(copyrightRow);
+  }
+
+  // Create the table using WebImporter.DOMUtils.createTable
+  const table = WebImporter.DOMUtils.createTable(cells, document);
+
+  // Replace the original element with the table
+  element.replaceWith(table);
 }

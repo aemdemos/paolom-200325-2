@@ -1,69 +1,48 @@
 export default function parse(element, {document}) {
-    // Define the header row exactly as per the example
-    const headerCell = document.createElement('strong');
-    headerCell.textContent = 'Cards';
-    const headerRow = [headerCell];
+  const headerCell = document.createElement('strong');
+  headerCell.textContent = 'Cards';
+  const cells = [[headerCell]]; // Header row
 
-    // Function to handle nested hierarchical menus and avoid duplicates
-    const extractMenuItems = (menu, parentLabel = '') => {
-        const rows = [];
-        const menuLabel = menu.getAttribute('menu-label') || menu.getAttribute('trigger-content');
-        const linkItems = menu.querySelectorAll('a');
+  // Helper function to create rows for items
+  const createCardRow = (menuLabel, itemText, itemLink) => {
+    const imagePlaceholder = document.createElement('img');
+    imagePlaceholder.alt = menuLabel;
+    imagePlaceholder.src = '/path/to/image'; // Placeholder image src
 
-        const currentLabel = parentLabel ? `${parentLabel} > ${menuLabel}` : menuLabel;
+    const textContent = document.createElement('div');
+    const heading = document.createElement('h3');
+    heading.textContent = menuLabel;
+    const description = document.createElement('p');
+    description.textContent = itemText;
 
-        if (linkItems.length > 0) {
-            linkItems.forEach((link) => {
-                const textContent = link.textContent.trim();
-                const href = link.getAttribute('href');
+    const link = document.createElement('a');
+    link.href = itemLink;
+    link.textContent = 'Learn more';
 
-                // Avoid duplicates
-                if (!rows.some(row => row[1]?.textContent === textContent && row[2]?.textContent === href)) {
-                    rows.push([
-                        currentLabel || '',
-                        document.createTextNode(textContent),
-                        href ? document.createTextNode(href) : ''
-                    ]);
-                }
-            });
-        } else if (menuLabel) {
-            rows.push([
-                currentLabel,
-                '',
-                ''
-            ]);
-        }
+    textContent.append(heading, description, link);
 
-        const nestedMenus = menu.querySelectorAll('awtcustom-header-menu');
-        nestedMenus.forEach((nestedMenu) => {
-            rows.push(...extractMenuItems(nestedMenu, currentLabel));
-        });
+    return [imagePlaceholder, textContent];
+  };
 
-        return rows;
-    };
+  // Process navigation items
+  const navItems = Array.from(element.querySelectorAll('awtcustom-header-nav-item a'));
+  navItems.forEach((item) => {
+    cells.push(createCardRow('Navigation Item', item.textContent.trim(), item.href));
+  });
 
-    // Extract navigation items and build rows dynamically
-    const rows = [];
-    const navItems = element.querySelectorAll('awtcustom-header-nav-item, awtcustom-header-menu');
+  // Process menus and submenus
+  const menuItems = Array.from(element.querySelectorAll('awtcustom-header-menu'));
+  menuItems.forEach((menu) => {
+    const menuLabel = menu.getAttribute('menu-label');
+    const items = Array.from(menu.querySelectorAll('awtcustom-header-menu-item a'));
 
-    navItems.forEach((navItem) => {
-        rows.push(...extractMenuItems(navItem));
+    items.forEach((item) => {
+      cells.push(createCardRow(menuLabel, item.textContent.trim(), item.href));
     });
+  });
 
-    // Filter out duplicates before adding to cells
-    const uniqueRows = rows.filter((row, index, self) => {
-        return index === self.findIndex((r) => r[1]?.textContent === row[1]?.textContent && r[2]?.textContent === row[2]?.textContent);
-    });
+  const table = WebImporter.DOMUtils.createTable(cells, document);
 
-    // Combine header and rows into table data
-    const cells = [
-        headerRow,
-        ...uniqueRows
-    ];
-
-    // Create the table using the helper function
-    const table = WebImporter.DOMUtils.createTable(cells, document);
-
-    // Replace the original element with the new structured table
-    element.replaceWith(table);
+  // Replace the original element with the new table
+  element.replaceWith(table);
 }

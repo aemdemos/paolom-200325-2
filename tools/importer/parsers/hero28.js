@@ -1,45 +1,36 @@
 export default function parse(element, {document}) {
-  const cells = [];
+  // Extract the title
+  const title = element.querySelector('.awt-error-page__title');
+  const titleElement = document.createElement('h1');
+  titleElement.textContent = title ? title.textContent : '';
 
-  // Header row with block name
+  // Extract the description
+  const description = element.querySelector('.awt-error-page__description');
+  const descriptionElement = document.createElement('p');
+  descriptionElement.innerHTML = description ? description.innerHTML : '';
+
+  // Extract the buttons
+  const buttons = element.querySelectorAll('awt-btn');
+  const buttonElements = Array.from(buttons).map((button) => {
+    const link = document.createElement('a');
+    link.href = button.getAttribute('href');
+    link.textContent = button.textContent;
+    return link;
+  });
+
+  // Create the table rows
   const headerCell = document.createElement('strong');
   headerCell.textContent = 'Hero';
   const headerRow = [headerCell];
-  cells.push(headerRow);
 
-  // Extract content from the element
-  const title = element.querySelector('.awt-error-page__title');
-  const description = element.querySelector('.awt-error-page__description');
-  const buttons = element.querySelectorAll('awt-btn');
+  const cells = [
+    headerRow,
+    [titleElement, descriptionElement, ...buttonElements],
+  ];
 
-  // Create content for the second row
-  const contentRow = [];
-
-  if (title) {
-    const titleHeading = document.createElement('h1');
-    titleHeading.textContent = title.textContent;
-    contentRow.push(titleHeading);
-  }
-
-  if (description) {
-    const descriptionParagraph = document.createElement('p');
-    descriptionParagraph.innerHTML = description.innerHTML;
-    contentRow.push(descriptionParagraph);
-  }
-
-  buttons.forEach((button) => {
-    const buttonLink = document.createElement('a');
-    buttonLink.href = button.getAttribute('href');
-    buttonLink.textContent = button.textContent;
-    buttonLink.className = 'cta-button';
-    contentRow.push(buttonLink);
-  });
-
-  cells.push([contentRow]);
-
-  // Create the block table
+  // Create the table
   const block = WebImporter.DOMUtils.createTable(cells, document);
 
-  // Replace the original element with the new block table
+  // Replace the original element with the new block
   element.replaceWith(block);
 }

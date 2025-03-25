@@ -1,42 +1,37 @@
 export default function parse(element, {document}) {
-  // Import the utility function for creating tables
-  const { createTable } = WebImporter.DOMUtils;
+  // Create the header row (fixing the issue with mismatched header)
+  const headerCell = document.createElement('strong');
+  headerCell.textContent = 'Columns';
+  const headerRow = [headerCell];
 
-  // Extract footer sections
-  const footerSections = element.querySelectorAll('awt-footer-section');
+  // Extract data into structured columns
+  const sections = element.querySelectorAll('awt-footer-section');
+  const columns = Array.from(sections).map((section) => {
+    const title = section.getAttribute('footertitle');
+    const links = Array.from(section.querySelectorAll('a'));
 
-  // Create the header row for the table
-  const headerRow = [
-    document.createElement('strong'),
-  ];
-  headerRow[0].textContent = 'Columns';
+    // Create elements for section title
+    const titleElement = document.createElement('strong');
+    titleElement.textContent = title;
 
-  // Prepare columns data for the footer sections
-  const columns = Array.from(footerSections).map((section) => {
-    const title = section.getAttribute('footertitle') || '';
-    const links = Array.from(section.querySelectorAll('a')).map((link) => {
-      const anchor = document.createElement('a');
-      anchor.href = link.href;
-      anchor.target = link.target;
-      anchor.innerHTML = link.innerHTML; // Preserve inner HTML for <sup> tags
-      return anchor;
+    // Create a list for the links
+    const list = document.createElement('ul');
+    links.forEach((link) => {
+      const listItem = document.createElement('li');
+      listItem.appendChild(link);
+      list.appendChild(listItem);
     });
 
-    const columnContent = [
-      document.createElement('h2'),
-      ...links
-    ];
-
-    columnContent[0].textContent = title;
-    return columnContent;
+    // Group title and links in a single cell
+    return [titleElement, list];
   });
 
-  // Construct rows for the table
-  const rows = [headerRow, columns];
+  // Ensure the cells array contains the header row and content rows
+  const cells = [headerRow, columns.map(column => column)];
 
-  // Create the table using the utility function
-  const table = createTable(rows, document);
+  // Create the block table
+  const blockTable = WebImporter.DOMUtils.createTable(cells, document);
 
-  // Replace the original element with the generated table
-  element.replaceWith(table);
+  // Replace the original element with the new block table
+  element.replaceWith(blockTable);
 }

@@ -1,65 +1,55 @@
 export default function parse(element, {document}) {
-  // Extracting elements from the original HTML structure
-  const container = element?.querySelector('awt-container');
-  if (!container) return; // Early exit if container is not found
+    // Ensure the element exists before proceeding
+    if (!element) {
+        console.error('Provided element is null or undefined.');
+        return;
+    }
 
-  const backgroundImage = container.querySelector('img[slot="background"]');
-  const article = container.querySelector('awt-article');
-  const standfirst = article?.getAttribute('standfirst');
-  const button = article?.querySelector('awt-btn');
+    // Safely access the background image
+    const backgroundImage = element.querySelector('img[slot="background"]');
+    const article = element.querySelector('awt-article');
+    const standfirst = article ? article.getAttribute('standfirst') : null;
+    const ctaButton = article ? article.querySelector('awt-btn') : null;
 
-  // Creating structured content
-  const cells = [];
+    const cells = [];
 
-  // Adding block name as header row
-  const headerCell = document.createElement('strong');
-  headerCell.textContent = 'Hero';
-  const headerRow = [headerCell];
-  cells.push(headerRow);
+    // Add the block type header row
+    const headerCell = document.createElement('strong');
+    headerCell.textContent = 'Hero';
+    const headerRow = [headerCell];
+    cells.push(headerRow);
 
-  // Adding content row
-  const contentRow = [];
+    // Construct the content row
+    const contentRow = [];
 
-  // Background image
-  if (backgroundImage) {
-    const imageElement = document.createElement('img');
-    imageElement.src = backgroundImage.src;
-    imageElement.alt = backgroundImage.alt || '';
-    contentRow.push(imageElement);
-  }
+    if (backgroundImage) {
+        const imgElement = document.createElement('img');
+        imgElement.src = backgroundImage.src;
+        imgElement.alt = backgroundImage.alt;
+        contentRow.push(imgElement);
+    }
 
-  // Title (standfirst as heading)
-  if (standfirst) {
-    const titleElement = document.createElement('h1');
+    if (standfirst) {
+        const divElement = document.createElement('div');
+        divElement.innerHTML = standfirst;
+        contentRow.push(divElement);
+    }
 
-    // Safely parse and append inline HTML content manually
-    const tempContainer = document.createElement('div');
-    tempContainer.innerHTML = standfirst;
-    Array.from(tempContainer.childNodes).forEach((child) => {
-      if (child.nodeType === Node.ELEMENT_NODE || child.nodeType === Node.TEXT_NODE) {
-        titleElement.appendChild(child.cloneNode(true));
-      }
-    });
+    if (ctaButton && ctaButton.textContent.trim()) {
+        const buttonElement = document.createElement('a');
+        buttonElement.href = ctaButton.getAttribute('href');
+        buttonElement.textContent = ctaButton.textContent.trim();
+        contentRow.push(buttonElement);
+    }
 
-    contentRow.push(titleElement);
-  }
+    // Only add the content row if it contains content
+    if (contentRow.length > 0) {
+        cells.push(contentRow);
+    }
 
-  // Call-to-action button
-  if (button) {
-    const buttonElement = document.createElement('a');
-    buttonElement.href = button.getAttribute('href');
-    buttonElement.textContent = button.textContent.trim();
-    contentRow.push(buttonElement);
-  }
+    // Create the table block
+    const block = WebImporter.DOMUtils.createTable(cells, document);
 
-  // Avoid creating empty rows
-  if (contentRow.length > 0) {
-    cells.push(contentRow);
-  }
-
-  // Creating the block table
-  const blockTable = WebImporter.DOMUtils.createTable(cells, document);
-
-  // Replacing the original element with the new block table
-  element.replaceWith(blockTable);
+    // Replace the original element with the new block
+    element.replaceWith(block);
 }

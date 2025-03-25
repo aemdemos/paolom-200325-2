@@ -1,31 +1,24 @@
 export default function parse(element, {document}) {
-  // Ensure the header row exactly matches the example
-  const headerCell = document.createElement('strong');
-  headerCell.textContent = 'Accordion';
-  const headerRow = [headerCell];
+    // Extract title dynamically
+    const titleElement = element.querySelector('p');
+    const titleText = titleElement ? titleElement.textContent.trim() : 'No Title';
 
-  // Extract dynamic content from the element
-  const titleElement = element.querySelector('p');
-  const title = titleElement ? titleElement.textContent.trim() : '';
+    // Create table header as in the example
+    const headerCell = document.createElement('strong');
+    headerCell.textContent = 'Accordion';
+    const headerRow = [headerCell];
 
-  // Create content cell dynamically (empty for this example)
-  const contentCell = document.createElement('div');
-  contentCell.textContent = ''; // Placeholder for content
+    // Create table cells dynamically
+    const cells = [
+        // Header row for the block type
+        headerRow,
+        // Content row with extracted data
+        [titleText, '']
+    ];
 
-  // Handle edge cases for missing title or content
-  if (!title) {
-    console.warn('Title is missing from element:', element);
-  }
+    // Generate the table using WebImporter helper function
+    const table = WebImporter.DOMUtils.createTable(cells, document);
 
-  // Structure rows dynamically
-  const rows = [
-    headerRow,
-    [title || 'Untitled Accordion', contentCell] // Use default if title is missing
-  ];
-
-  // Create table using WebImporter.DOMUtils.createTable
-  const block = WebImporter.DOMUtils.createTable(rows, document);
-
-  // Replace original element with the new block
-  element.replaceWith(block);
+    // Replace original element with the new table
+    element.replaceWith(table);
 }

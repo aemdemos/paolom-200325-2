@@ -1,36 +1,45 @@
 export default function parse(element, {document}) {
-  const cards = element.querySelectorAll('awt-category-card');
+  // Helper function to extract text content or return an empty string if not found
+  const getText = (selector, context) => {
+    const el = context.querySelector(selector);
+    return el ? el.textContent.trim() : '';
+  };
 
-  // Initialize the cells array with the header row matching the example
-  const cells = [['Cards']];
+  // Helper function to extract the image element
+  const getImage = (selector, context) => {
+    const img = context.querySelector(selector);
+    if (img) {
+      const image = document.createElement('img');
+      image.src = img.src;
+      image.alt = img.alt || '';
+      return image;
+    }
+    return null;
+  };
 
-  // Iterate through each card to extract content dynamically
-  cards.forEach(card => {
-    const image = card.querySelector('img');
-    const title = card.querySelector('.awt-category-card__title div');
-    const description = card.querySelector('p');
+  // Extract cards and convert them into table rows
+  const rows = Array.from(element.querySelectorAll('awt-category-card')).map(card => {
+    const image = getImage('img[slot="image-category"]', card);
+    const titleText = getText('h4 > div', card);
+    const descriptionText = getText('p[slot="cardDescription"] span', card);
 
-    // Handle missing data gracefully
-    const imageElement = document.createElement('img');
-    imageElement.src = image ? image.src : '';
-    imageElement.alt = image ? image.alt : '';
+    const title = document.createElement('strong');
+    title.textContent = titleText;
 
-    const titleElement = document.createElement('strong');
-    titleElement.textContent = title ? title.textContent : '';
+    const description = document.createElement('p');
+    description.innerHTML = descriptionText; // Use innerHTML to preserve markup (e.g., <sup>)
 
-    const descriptionElement = document.createElement('p');
-    descriptionElement.innerHTML = description ? description.innerHTML : '';
-
-    // Add rows with extracted elements to the cells array
-    cells.push([
-      imageElement,
-      [titleElement, descriptionElement]
-    ]);
+    return [image, [title, description]];
   });
 
-  // Create the table using the provided utility function
-  const table = WebImporter.DOMUtils.createTable(cells, document);
-  
-  // Replace the original element with the new table
+  // Add header row
+  const headerRow = [document.createElement('strong')];
+  headerRow[0].textContent = 'Cards';
+  rows.unshift(headerRow);
+
+  // Create the table block
+  const table = WebImporter.DOMUtils.createTable(rows, document);
+
+  // Replace the original element with the table
   element.replaceWith(table);
 }
